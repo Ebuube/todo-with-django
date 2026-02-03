@@ -1,0 +1,7 @@
+{# This replaces the deleted todo element (outerHTML swap) #}
+<span></span>
+
+{# This updates the messages area out-of-band #}
+<div id="messages" hx-swap-oob="true">
+  {% include "core/partials/messages.html" %}
+</div>

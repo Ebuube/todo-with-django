@@ -1,0 +1,5 @@
+{% for todo in todos %}
+  {% include "todos/partials/todo_item.html" with todo=todo %}
+{% empty %}
+  <div class="alert alert-info mb-0">No todos found.</div>
+{% endfor %}

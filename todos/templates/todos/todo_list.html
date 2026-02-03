@@ -11,7 +11,15 @@
     </div>
 
     <!-- Filters (GET so it’s shareable/bookmarkable) -->
-    <form method="get" class="row g-2 align-items-end mb-3">
+    <form
+      method="get"
+      action="{% url 'todos:list' %}"
+      class="row g-2 align-items-end mb-3"
+      hx-get="{% url 'todos:list' %}"
+      hx-target="#todo-list"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+    >
       <div class="col-12 col-md-3">
         <label class="form-label small text-muted mb-1">Status</label>
         <select name="status" class="form-select">
@@ -50,40 +58,9 @@
       </div>
     {% endif %}
 
-    {% if todos %}
-      <ul class="list-group list-group-flush">
-        {% for todo in todos %}
-          <li class="list-group-item d-flex align-items-center justify-content-between">
-            <div class="me-3">
-              {% if todo.is_completed %}
-                <span class="me-2">✅</span>
-                <span class="text-decoration-line-through text-muted">
-                  {{ todo.title }}
-                </span>
-              {% else %}
-                <span class="me-2">⬜</span>
-                {{ todo.title }}
-              {% endif %}
-            </div>
-
-            <div class="d-flex align-items-center gap-3">
-              {% if todo.due_date %}
-                <small class="text-muted">
-                  Due {{ todo.due_date }}
-                </small>
-              {% endif %}
-
-              <a href="{% url 'todos:edit' todo.pk %}" class="btn btn-sm btn-outline-primary">
-                Edit
-              </a>
-            </div>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="mb-0 text-muted">
-        You have no todos yet.
-      </p>
-    {% endif %}
+    <!-- HTMX swap target -->
+    <div id="todo-list" class="d-flex flex-column gap-2">
+      {% include "todos/partials/todo_list.html" %}
+    </div>
   </div>
 {% endblock %}

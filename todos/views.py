@@ -3,10 +3,45 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from .forms import TodoForm
 from .models import Todo
+from .utils import is_htmx
 
+@login_required
+@require_POST
+def toggle_todo(request, pk):
+    todo = get_object_or_404(Todo, pk=pk, owner=request.user)
+    todo.is_completed = not todo.is_completed
+    todo.save(update_fields=['is_completed', 'updated_at'])
+
+    if todo.is_completed:
+        messages.success(request, 'Todo marked as completed.')
+    else:
+        messages.success(request, 'Todo marked as pending.')
+
+    if is_htmx(request):
+        return render(request, 'todos/partials/todo_item_response.html', {'todo': todo})
+
+    # Non-JS fallback
+    return redirect('todos:list')
+
+@login_required
+@require_POST
+def delete_todo(request, pk):
+    todo = get_object_or_404(Todo, pk=pk, owner=request.user)
+    title = todo.title
+    todo.delete()
+
+    messages.success(request, f'Deleted todo: "{title}"')
+
+    if is_htmx(request):
+        # return empty so outerHMNL swap removes the node cleanly
+        return render(request, 'todos/partials/todo_delete_response.html')
+
+    # Non-JS fallback
+    return redirect('todos:list')
 
 @login_required
 def todo_create(request):
@@ -82,4 +117,8 @@ def todo_list(request):
         'status': status,
         'q': q,
     }
+
+    if is_htmx(request):
+        return render(request, 'todos/partials/todo_list.html', context)
+
     return render(request, 'todos/todo_list.html', context)

@@ -1,0 +1,5 @@
+{% include "todos/partials/todo_item.html" with todo=todo %}
+
+<div id="messages" hx-swap-oob="true">
+  {% include "core/partials/messages.html" %}
+</div>
