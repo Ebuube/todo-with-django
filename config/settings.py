@@ -141,12 +141,19 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter',
+    ],
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
     ]
 }
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Todo API',
     'DESCRIPTION': 'Todo app API with auth and progress-ready structure',
     'VERSION': '0.1.0',
+
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 LOGIN_URL = 'cor\e:login'

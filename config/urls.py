@@ -15,7 +15,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, reverse_lazy
+from django.views.generic import RedirectView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -24,6 +25,7 @@ from drf_spectacular.views import (
 
 
 urlpatterns = [
+    path('', RedirectView.as_view(url=reverse_lazy('todos:dashboard')), name='root'),
     path('admin/', admin.site.urls),
 
     # SSR auth pages (login/logout/signup)
