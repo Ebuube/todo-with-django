@@ -16,15 +16,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView
+)
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
+    # SSR auth pages (login/logout/signup)
+    path('auth/', include(('core.urls', 'core'), namespace='core')),
+
     ## SSR pages
-    path('', include('core.urls')),
-    path('todos/', include('todos.urls')),
+    path('todos/', include(('todos.urls', 'todos'), namespace='todos')),
 
     # API schema and docs
     path('api/schema', SpectacularAPIView.as_view(), name='schema'),

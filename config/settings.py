@@ -136,3 +136,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Todo app API with auth and progress-ready structure',
     'VERSION': '0.1.0',
 }
+
+LOGIN_URL = 'cor\e:login'
+LOGIN_REDIRECT_URL = 'todos:list'
+LOGOUT_REDIRECT_URL = 'core:login'

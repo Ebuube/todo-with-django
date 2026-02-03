@@ -11,9 +11,42 @@
   <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container">
-        <a class="navbar-brand" href="/">Todo</a>
-        <div class="d-flex">
-          <a class="btn btn-outline-light btn-sm" href="/dashboard/">Dashboard</a>
+        <a class="navbar-brand" href="{% url 'todos:list' %}">Todo</a>
+
+        <div class="d-flex align-items-center gap-2">
+          {% if user.is_authenticated %}
+            <a class="btn btn-outline-light btn-sm" href="{% url 'todos:list' %}">Dashboard</a>
+
+            <div class="dropdown">
+              <a
+                class="btn btn-outline-light btn-sm dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                {{ user.username }}
+              </a>
+
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <span class="dropdown-item-text small text-muted">
+                    Signed in
+                  </span>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <form method="post" action="{% url 'core:logout' %}">
+                    {% csrf_token %}
+                    <button class="dropdown-item" type="submit">Logout</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          {% else %}
+            <a class="btn btn-outline-light btn-sm" href="{% url 'core:login' %}">Login</a>
+            <a class="btn btn-light btn-sm" href="{% url 'core:signup' %}">Sign up</a>
+          {% endif %}
         </div>
       </div>
     </nav>
