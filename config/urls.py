@@ -33,10 +33,10 @@ urlpatterns = [
     path('todos/', include(('todos.urls', 'todos'), namespace='todos')),
 
     # API schema and docs
-    path('api/schema', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
     # API endpoints (we'll create todos API under this)
-    path('api/', include('todos.api_urls')),
+    path('api/', include('todos.api.urls')),
 ]
