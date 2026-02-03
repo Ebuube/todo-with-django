@@ -1,8 +1,11 @@
 from django.urls import path
-from . import views
+from .views import dashboard, todo_list, todo_create, todo_edit
 
 app_name = 'todos'
 
 urlpatterns = [
-  path('', views.todo_list, name='list'),
+  path('', todo_list, name='list'),
+  path('dashboard/', dashboard, name='dashboard'),
+  path('create/', todo_create, name='create'),
+  path('<int:pk>/edit/', todo_edit, name='edit'),
 ]

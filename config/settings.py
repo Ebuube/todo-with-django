@@ -138,5 +138,5 @@ SPECTACULAR_SETTINGS = {
 }
 
 LOGIN_URL = 'cor\e:login'
-LOGIN_REDIRECT_URL = 'todos:list'
+LOGIN_REDIRECT_URL = 'todos:dashboard'
 LOGOUT_REDIRECT_URL = 'core:login'
