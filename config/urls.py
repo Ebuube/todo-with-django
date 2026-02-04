@@ -24,6 +24,11 @@ from drf_spectacular.views import (
 )
 
 
+handler400 = "core.views.bad_request"
+handler403 = "core.views.permission_denied"
+handler404 = "core.views.not_found"
+handler500 = "core.views.server_error"
+
 urlpatterns = [
     path('', RedirectView.as_view(url=reverse_lazy('todos:dashboard')), name='root'),
     path('admin/', admin.site.urls),

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import logging
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,15 +22,33 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
+def env(key: str, default=None):
+    return os.getenv(key, default)
+
+def env_bool(key: str, default: bool = False) -> bool:
+    val = os.environ.get(key)
+    if val is None:
+        return default
+    return val.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+# -------------------------------------------------------------------
+# Core
+# -------------------------------------------------------------------
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'unsafe-dev-key')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'unsafe-dev-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = env_bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in env('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
 
+# If you're behind a proxy in production
+USE_X_FORWARDED_HOST = env_bool('DJANGO_USE_X_FORWARDED_HOST', False)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if env_bool('DJANGO_SECURE_PROXY_SSL', False) else None
 
+# -------------------------------------------------------------------
+# Apps / Middleware (keep your existing INSTALLED_APPS; only showing relevant bits)
+# -------------------------------------------------------------------
 # Application definition
 
 INSTALLED_APPS = [
@@ -54,7 +73,10 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+
+    # CSRF stays ON (default)
     'django.middleware.csrf.CsrfViewMiddleware',
+
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -69,6 +91,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -79,7 +102,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
+# -------------------------------------------------------------------
+# Database settings
+# -------------------------------------------------------------------
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -91,6 +116,9 @@ DATABASES = {
 }
 
 
+# -------------------------------------------------------------------
+# Django Auth
+# -------------------------------------------------------------------
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -128,6 +156,37 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+
+# -------------------------------------------------------------------
+# Security: cookies + HTTPs behaviour (production toggled via env)
+# -------------------------------------------------------------------
+# When DJANGO_PRODUCTION=true we assume HTTPS, secure cookies, etc
+PRODUCTION = env_bool('DJANGO_PRODUCTION', False)
+
+CSRF_COOKIE_SECURE = PRODUCTION
+SESSION_COOKIE_SECURE = PRODUCTION
+
+# Prevent JS access to session cookie
+SESSION_COOKIE_HTTPONLY = True
+
+# Recommended moden default
+CSRF_COOKIE_SAMESITE = env('DJANGO_CSRF_COOKIE_SAMESITE', 'Lax')
+SESSION_COOKIE_SAMESITE = env('DJANGO_SESSION_COOKIE_SAMESITE', 'Lax')
+
+# Strictier transport security when serving over HTTPS
+SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', False) if not PRODUCTION else env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
+
+# Helpful baseline headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+X_FRAME_OPTIONS = 'DENY'
+
+
+# -------------------------------------------------------------------
+# DRF (USER settings)
+# -------------------------------------------------------------------
+
+
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
@@ -136,7 +195,7 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': int(env('DJANGO_API_PAGE_SIZE', '10')),
 
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.OrderingFilter',
@@ -156,6 +215,60 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 }
 
-LOGIN_URL = 'cor\e:login'
+
+# -------------------------------------------------------------------
+# Auth (USER settings)
+# -------------------------------------------------------------------
+LOGIN_URL = 'core:login'
 LOGIN_REDIRECT_URL = 'todos:dashboard'
 LOGOUT_REDIRECT_URL = 'core:login'
+
+
+# -------------------------------------------------------------------
+# Structured logging (JSON-ish) + sane defaults
+# -------------------------------------------------------------------
+LOG_LEVEL = env('DJANGO_LOG_LEVEL', 'INFO').upper()
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        # Simple, dependency-free structured logging
+        payload = {
+            'level': record.levelname,
+            'logger': record.name,
+            'message': record.getMessage(),
+            'time': self.formatTime(record, self.datefmt),
+        }
+        if record.exc_info:
+            payload['exc_info'] = self.formatException(record.exc_info)
+        if hasattr(record, 'request_id'):
+            payload['request_id'] = getattr(record, 'request_id')
+        # Minimal JSON
+        import json
+        return json.dumps(payload, ensure_ascii=False)
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {'()': JsonFormatter},
+        'console': {'format': '%(levelname)s %(asctime)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'default': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json' if PRODUCTION else 'console',
+        },
+    },
+    'root': {
+        'handlers': ['default'],
+        'level': LOG_LEVEL,
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['default'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+    },
+}

@@ -68,5 +68,17 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // HTMX + Django CSRF (required for POST/PATCH/DELETE via HTMX)
+      document.body.addEventListener('htmx:configRequest', function (event) {
+        const name = 'csrftoken=';
+        const parts = document.cookie.split(';').map(v => v.trim());
+        const token = parts.find(v => v.startsWith(name));
+        if (token) {
+          event.detail.headers['X-CSRFToken'] = token.substring(name.length);
+        }
+      });
+    </script>
+
   </body>
 </html>
