@@ -9,11 +9,12 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
-from pathlib import Path
+import dj_database_url
 import os
 import logging
 from dotenv import load_dotenv
+from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -108,12 +109,27 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = env('DATABASE_URL')
+
+if DATABASE_URL:
+    # Postgres (or any supported DB via DATABASE_URL)
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=int(env('DB_CONN_MAX_AGE', '60')),
+            ssl_require=env_bool('DB_SSL_REQUIRE', '0') == '1',
+        )
     }
-}
+else:
+    # Default: SQLite for local dev
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+DATABASES['default']['ATOMIC_REQUESTS'] = env('DB_ATOMIC_REQUESTS', '0') == '1'
 
 
 # -------------------------------------------------------------------
@@ -154,7 +170,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+# STATICFILES_DIRS = [BASE_DIR / 'static']
 
 
 # -------------------------------------------------------------------
