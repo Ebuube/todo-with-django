@@ -1,3 +1,6 @@
+https://github.com/user-attachments/assets/779959b5-1bd6-4629-ae12-be92371b1c21
+
+
 # Task Management System (Django)
 
 A simple, focused task management system for individuals who value time, clarity, and reliability.
