@@ -14,4 +14,4 @@
 
 * Bootstrap 5 via CDN (fastest)
 
-* Interactivity: SSR only (for now). (Later you can add HTMX easily)
+* Interactivity: SSR only (for now).
